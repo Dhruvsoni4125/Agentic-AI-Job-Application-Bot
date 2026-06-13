@@ -1,0 +1,29 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Session cookies
+naukri_session.json
+
+# Local Outputs & Logs
+outputs/
+
+# User-specific PDF resume
+data/Dhruv_Resume.pdf
+
+# IDE/Tool configs
+.vscode/
+.idea/
+.gemini/
