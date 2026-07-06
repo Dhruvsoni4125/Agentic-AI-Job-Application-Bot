@@ -46,6 +46,9 @@ async def telegram_webhook(request: Request):
 @app.on_event("startup")
 async def on_startup():
     logger.info("Starting up server...")
+    if not settings.BOT_TOKEN:
+        logger.error("BOT_TOKEN is missing! Cannot start API server.")
+        raise ValueError("BOT_TOKEN is missing!")
     if settings.WEBHOOK_URL:
         webhook_url = f"{settings.WEBHOOK_URL.rstrip('/')}{settings.WEBHOOK_PATH}"
         logger.info(f"Setting Telegram Webhook to {webhook_url}")
