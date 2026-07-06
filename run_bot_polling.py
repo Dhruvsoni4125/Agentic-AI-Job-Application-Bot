@@ -11,6 +11,10 @@ async def main():
     # Include handlers
     dp.include_router(bot_router)
     
+    if not settings.BOT_TOKEN:
+        logger.error("BOT_TOKEN is missing! Please configure it in your .env file.")
+        return
+        
     logger.info("De-registering any active webhooks...")
     await bot.delete_webhook(drop_pending_updates=True)
     
