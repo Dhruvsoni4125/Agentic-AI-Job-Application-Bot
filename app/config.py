@@ -3,15 +3,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
-    BOT_TOKEN: str
-    SUPABASE_URL: str
-    SUPABASE_SERVICE_KEY: str
-    DATABASE_URL: str
-    NEMOTRON_API_KEY: str
-    ENCRYPTION_KEY: str
-    GITHUB_PAT: str
-    GITHUB_OWNER: str
-    GITHUB_REPO: str
+    BOT_TOKEN: str = ""
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    DATABASE_URL: str = ""
+    NEMOTRON_API_KEY: str = ""
+    ENCRYPTION_KEY: str = ""
+    GITHUB_PAT: str = ""
+    GITHUB_OWNER: str = ""
+    GITHUB_REPO: str = ""
     SENTRY_DSN: Optional[str] = None
     
     # Webhook config
