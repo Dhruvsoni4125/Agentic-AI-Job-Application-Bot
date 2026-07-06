@@ -1,29 +1,35 @@
-# Virtual Environment
+# Environments
 venv/
-.venv/
-env/
 ENV/
+env/
+.env
 
-# Python cache & compiled files
+# Python caching
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Environment Variables & Secrets
-.env
-.env.*
-!.env.example
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Session cookies
-naukri_session.json
+# Local database / storage files
+*.db
+*.sqlite
 
-# Local Outputs & Logs
-outputs/
+# Secrets / cookies
+*.pkl
+*.session
+*.cookie
+cookies.json
 
-# User-specific PDF resume
-data/Dhruv_Resume.pdf
+# Resumes / PDFs / Word files generated or uploaded locally
+*.pdf
+*.docx
+*.doc
 
-# IDE/Tool configs
+# IDEs
 .vscode/
 .idea/
 .gemini/
