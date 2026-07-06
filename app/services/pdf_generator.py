@@ -556,27 +556,36 @@ TEMPLATES = {
     "creative": CREATIVE_TEMPLATE
 }
 
-def generate_pdf_sync(data: dict, template_name: str = "classic") -> bytes:
-    """Synchronously renders resume data to HTML and compiles to PDF bytes using WeasyPrint."""
-    template_str = TEMPLATES.get(template_name, CLASSIC_TEMPLATE)
-    template = Template(template_str)
-    html_content = template.render(**data)
-    
-    # Lazy import — WeasyPrint needs GTK/Pango system libs
-    from weasyprint import HTML
-    pdf_bytes = HTML(string=html_content).write_pdf()
-    return pdf_bytes
-
 async def generate_resume_pdf(data: dict, template_name: str = "classic", output_path: str = None) -> bytes:
     """
-    Asynchronously generates a resume PDF from data.
-    If output_path is provided, writes the PDF bytes to that path on disk.
-    Returns the PDF bytes.
+    Asynchronously generates a resume PDF from data using Playwright (Chromium).
+    Honors @page CSS margins and layouts.
     """
+    from playwright.async_api import async_playwright
     try:
-        pdf_bytes = await asyncio.to_thread(generate_pdf_sync, data, template_name)
+        logger.info(f"Rendering HTML template '{template_name}' to PDF via Playwright...")
+        template_str = TEMPLATES.get(template_name, CLASSIC_TEMPLATE)
+        template = Template(template_str)
+        html_content = template.render(**data)
+        
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.set_content(html_content)
+            # Wait for layouts to settle
+            await page.evaluate("document.fonts.ready")
+            
+            # Generate PDF matching WeasyPrint's A4 format
+            pdf_bytes = await page.pdf(
+                format="A4",
+                print_background=True
+            )
+            await browser.close()
+            
         if output_path:
             await asyncio.to_thread(lambda: open(output_path, "wb").write(pdf_bytes))
+            
+        logger.info("PDF generation complete.")
         return pdf_bytes
     except Exception as e:
         logger.error(f"Error generating PDF: {e}")
