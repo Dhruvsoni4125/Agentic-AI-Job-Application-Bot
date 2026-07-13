@@ -49,6 +49,7 @@ async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     async with async_session_maker() as db:
         await crud.get_or_create_user(db, message.from_user.id)
+    await state.update_data(is_onboarding=True)
     await send_welcome_and_start_onboarding(message, state)
 
 @router.message(Command("help"))
@@ -57,8 +58,8 @@ async def cmd_help(message: Message):
         "🤖 **AI Resume Optimizer & Auto Job Apply Bot**\n\n"
         "Here's what I can do:\n\n"
         "📄 **Upload/Update Resume** — Upload your resume (.pdf or .docx) for parsing and optimization.\n"
-        "🔑 **Configure Session Cookies** — Set up your LinkedIn/Naukri session cookies for auto-apply.\n"
-        "🔍 **Search Jobs** — Trigger a Playwright-powered job search on LinkedIn.\n"
+        "🔑 **Configure Session Cookies** — Set up your LinkedIn session cookie for auto-apply.\n"
+        "🔍 **Search Jobs** — Trigger Playwright-powered job searches on LinkedIn and Naukri.\n"
         "⚡ **Optimize Resume (ATS)** — Paste a Job Description and get ATS scoring + an optimized resume PDF.\n"
         "📋 **Application History** — View your recent job applications and their statuses.\n\n"
         "**Commands:**\n"
@@ -111,9 +112,12 @@ async def handle_onboarding_resume(message: Message, state: FSMContext):
         )
         
         # Check if user already has a profile (Update Resume flow vs Onboarding)
+        state_data = await state.get_data()
+        is_onboarding = state_data.get("is_onboarding", False)
+        
         async with async_session_maker() as db:
             user = await crud.get_or_create_user(db, message.from_user.id)
-            if user.preferred_role:
+            if user.preferred_role and not is_onboarding:
                 # User already has a profile — just save the new resume
                 await crud.create_resume(
                     db,
@@ -319,8 +323,8 @@ async def cmd_search_jobs(message: Message):
             await message.answer(job_text, reply_markup=builder.as_markup(), parse_mode="Markdown", disable_web_page_preview=True)
     else:
         await message.answer(
-            f"🔍 Triggered a fresh job search workflow in the background for *'{user_role}'*.\n\n"
-            "We will scan jobs for your locations: " + ", ".join(user_locations) + ".\n"
+            f"🔍 Triggered fresh job search workflows in the background for *'{user_role}'*.\n\n"
+            "We will scan LinkedIn and Naukri for your locations: " + ", ".join(user_locations) + ".\n"
             "You will be notified once matching jobs are processed!",
             parse_mode="Markdown"
         )
@@ -333,6 +337,15 @@ async def handle_cookie_platform(callback: CallbackQuery, state: FSMContext):
     platform = callback.data.split(":")[1]
     await state.update_data(platform=platform)
     await state.set_state(CookieAuth.waiting_cookie)
+
+    if platform != "linkedin":
+        await callback.message.edit_text(
+            "⚠️ Only LinkedIn cookie automation is supported right now.\n\nPlease choose LinkedIn to continue.",
+            parse_mode="Markdown"
+        )
+        await state.clear()
+        await callback.answer()
+        return
     
     instructions = {
         "linkedin": (
@@ -341,14 +354,6 @@ async def handle_cookie_platform(callback: CallbackQuery, state: FSMContext):
             "2. Open Developer Tools (F12) -> Application (Chrome) or Storage (Firefox) -> Cookies.\n"
             "3. Find the cookie named `li_at` and copy its value.\n"
             "4. Paste and send the `li_at` value directly here."
-        ),
-        "naukri": (
-            "🔑 **Naukri Cookie Setup**:\n\n"
-            "1. Log into Naukri.com on your desktop browser.\n"
-            "2. Open Developer Tools (F12) -> Network tab.\n"
-            "3. Refresh the page and look for a request to `naukri.com`.\n"
-            "4. Copy the entire value of the `Cookie` request header.\n"
-            "5. Paste and send that string directly here."
         )
     }.get(platform, "Please send your session cookie string.")
 
