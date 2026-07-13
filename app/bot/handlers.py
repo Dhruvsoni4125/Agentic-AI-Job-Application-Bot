@@ -10,9 +10,9 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.config import settings
-from app.bot.bot import bot
-from app.bot.states import Onboarding, CookieAuth, OptimizeFlow
-from app.bot.keyboards import (
+from app.bot.bot import (
+    bot,
+    Onboarding, CookieAuth, OptimizeFlow,
     get_main_menu_keyboard,
     get_platform_keyboard,
     get_yes_no_keyboard,
