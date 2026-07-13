@@ -117,7 +117,7 @@ async def run_linkedin_apply(apply_link: str, li_at_cookie: str, resume_file_pat
         except Exception as e:
             logger.error(f"Error during application process: {e}")
             await take_screenshot_on_failure(page, "apply_exception.png")
-            return False
+            raise
         finally:
             await browser.close()
 
@@ -160,11 +160,16 @@ async def main():
         sys.exit(1)
 
     # 3. Run Easy Apply
-    success = await run_linkedin_apply(
-        apply_link=job.apply_link,
-        li_at_cookie=li_at_cookie,
-        resume_file_path=temp_resume_path
-    )
+    hard_failure = False
+    try:
+        success = await run_linkedin_apply(
+            apply_link=job.apply_link,
+            li_at_cookie=li_at_cookie,
+            resume_file_path=temp_resume_path
+        )
+    except Exception:
+        success = False
+        hard_failure = True
     
     # 4. Cleanup resume
     if os.path.exists(temp_resume_path):
@@ -196,9 +201,11 @@ async def main():
     if success:
         logger.info("Application flow completed successfully.")
         # Trigger an alert/message to user (can be done via FastAPI webhook or similar in staging/prod)
-    else:
-        logger.error("Application flow failed.")
+    elif hard_failure:
+        logger.error("Application flow failed due to an unexpected automation error.")
         sys.exit(1)
+    else:
+        logger.warning("Application was not submitted (for example, Easy Apply unavailable). Recorded as failed without failing the workflow.")
 
 if __name__ == "__main__":
     asyncio.run(main())
